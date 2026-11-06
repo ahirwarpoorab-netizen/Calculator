@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="hi" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Calculator App</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'neon': '0 0 15px rgba(59, 130, 246, 0.5)',
+                        'glow': '0 0 20px rgba(168, 85, 247, 0.4)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar for history panel */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.3);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(156, 163, 175, 0.5);
+        }
+        .btn-active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen w-screen flex flex-col transition-colors duration-300 font-sans select-none overflow-x-hidden">
+
+    <!-- Main Outer Wrapper: Responsive & Full Height Screen Layout -->
+    <div class="flex-1 w-full max-w-7xl mx-auto p-2 sm:p-6 flex flex-col">
+        
+        <!-- Calculator Card (Full width & flexible height) -->
+        <div class="flex-1 w-full bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row transition-all">
+            
+            <!-- Calculator Main Area -->
+            <div class="flex-1 p-4 sm:p-6 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800">
+                
+                <!-- Top Controls (Header) -->
+                <div class="flex justify-between items-center mb-3">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs font-semibold px-3 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-full tracking-wide">
+                            CALCULATOR
+                        </span>
+                        <button id="mode-toggle-btn" onclick="toggleScientific()" class="text-xs font-medium px-3 py-1 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-full hover:bg-slate-300 dark:hover:bg-slate-700 transition">
+                            <i class="fa-solid fa-flask mr-1"></i> Scientific
+                        </button>
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                        <!-- Dark/Light Theme Toggle -->
+                        <button onclick="toggleTheme()" class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center transition">
+                            <i id="theme-icon" class="fa-solid fa-moon"></i>
+                        </button>
+                        <!-- History Modal Open Button -->
+                        <button onclick="openHistoryModal()" class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center transition" title="View History">
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Display Screen -->
+                <div class="bg-slate-50 dark:bg-slate-950 p-4 sm:p-6 rounded-2xl mb-4 text-right flex flex-col justify-end border border-slate-200/80 dark:border-slate-800 min-h-[110px] sm:min-h-[140px] shadow-inner">
+                    <!-- Expression Line -->
+                    <div id="expression-display" class="text-slate-400 dark:text-slate-500 text-sm sm:text-base font-mono h-6 overflow-x-auto whitespace-nowrap scrollbar-none">
+                        0
+                    </div>
+                    <!-- Main Value Display -->
+                    <div id="main-display" class="text-3xl sm:text-5xl font-bold font-mono tracking-tight text-slate-800 dark:text-slate-100 overflow-x-auto whitespace-nowrap scrollbar-none mt-1">
+                        0
+                    </div>
+                </div>
+
+                <!-- Keypad Area -->
+                <div class="flex-1 flex flex-col justify-end space-y-2">
+                    
+                    <!-- Scientific Panel (Collapsible / Toggleable) -->
+                    <div id="scientific-panel" class="hidden grid-cols-5 gap-1.5 sm:gap-2 mb-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                        <button onclick="appendFunction('sin')" class="p-2.5 text-xs font-semibold rounded-lg bg-slate-200/70 dark:bg-slate-800/60 hover:bg-slate-300 dark:hover:bg-slate-700 transition">sin</button>
+                        <button onclick="appendFunction('cos')" class="p-2.5 text-xs font-semibold rounded-lg bg-slate-200/70 dark:bg-slate-800/60 hover:bg-slate-300 dark:hover:bg-slate-700 transition">cos</button>
+                        <button onclick="appendFunction('tan')" class="p-2.5 text-xs font-semibold rounded-lg bg-slate-200/70 dark:bg-slate-800/60 hover:bg-slate-300 dark:hover:bg-slate-700 transition">tan</button>
+                        <button onclick="appendFunction('log')" class="p-2.5 text-xs font-semibold rounded-lg bg-slate-200/70 dark:bg-slate-800/60 hover:bg-slate-300 dark:hover:bg-slate-700 transition">log</button>
+                        <button onclick="appendFunction('ln')" class="p-2.5 text-xs font-semibold rounded-lg bg-slate-200/70 dark:bg-slate-800/60 hover:bg-slate-300 dark:hover:bg-slate-700 transition">ln</button>
+
+                        <button onclick="appendFunction('sqrt')" class="p-2.5 text-xs font-semibold rounded-lg bg-slate-200/70 dark:bg-slate-800/60 hover:bg-slate-300 dark:hover:bg-slate-700 transition">√</button>
+                        <button onclick="appendOperator('^')" class="p-2.5 text-xs font-semibold rounded-lg bg-slate-200/70 dark:bg-slate-800/60 hover:bg-slate-300 dark:hover:bg-slate-700 transition">x^y</button>
+                        <button onclick="appendConstant('π')" class="p-2.5 text-xs font-semibold rounded-lg bg-slate-200/70 dark:bg-slate-800/60 hover:bg-slate-300 dark:hover:bg-slate-700 transition">π</button>
+                        <button onclick="appendConstant('e')" class="p-2.5 text-xs font-semibold rounded-lg bg-slate-200/70 dark:bg-slate-800/60 hover:bg-slate-300 dark:hover:bg-slate-700 transition">e</button>
+                        <button onclick="appendFunction('abs')" class="p-2.5 text-xs font-semibold rounded-lg bg-slate-200/70 dark:bg-slate-800/60 hover:bg-slate-300 dark:hover:bg-slate-700 transition">|x|</button>
+                    </div>
+
+                    <!-- Standard Keypad -->
+                    <div class="grid grid-cols-4 gap-2 sm:gap-3 flex-1">
+                        <!-- Row 1 -->
+                        <button onclick="clearAll()" class="p-3 sm:p-5 text-base font-bold text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-950/40 hover:bg-red-200 dark:hover:bg-red-900/60 rounded-xl transition shadow-sm">AC</button>
+                        <button onclick="appendParentheses()" class="p-3 sm:p-5 text-lg font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-slate-700 rounded-xl transition shadow-sm">( )</button>
+                        <button onclick="appendOperator('%')" class="p-3 sm:p-5 text-base font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-slate-700 rounded-xl transition shadow-sm">%</button>
+                        <button onclick="appendOperator('/')" class="p-3 sm:p-5 text-lg font-bold text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40 hover:bg-blue-200 dark:hover:bg-blue-800/60 rounded-xl transition shadow-sm">÷</button>
+
+                        <!-- Row 2 -->
+                        <button onclick="appendNumber('7')" class="p-3 sm:p-5 text-lg sm:text-xl font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition shadow-sm">7</button>
+                        <button onclick="appendNumber('8')" class="p-3 sm:p-5 text-lg sm:text-xl font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition shadow-sm">8</button>
+                        <button onclick="appendNumber('9')" class="p-3 sm:p-5 text-lg sm:text-xl font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition shadow-sm">9</button>
+                        <button onclick="appendOperator('*')" class="p-3 sm:p-5 text-lg font-bold text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40 hover:bg-blue-200 dark:hover:bg-blue-800/60 rounded-xl transition shadow-sm">×</button>
+
+                        <!-- Row 3 -->
+                        <button onclick="appendNumber('4')" class="p-3 sm:p-5 text-lg sm:text-xl font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition shadow-sm">4</button>
+                        <button onclick="appendNumber('5')" class="p-3 sm:p-5 text-lg sm:text-xl font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition shadow-sm">5</button>
+                        <button onclick="appendNumber('6')" class="p-3 sm:p-5 text-lg sm:text-xl font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition shadow-sm">6</button>
+                        <button onclick="appendOperator('-')" class="p-3 sm:p-5 text-lg font-bold text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40 hover:bg-blue-200 dark:hover:bg-blue-800/60 rounded-xl transition shadow-sm">−</button>
+
+                        <!-- Row 4 -->
+                        <button onclick="appendNumber('1')" class="p-3 sm:p-5 text-lg sm:text-xl font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition shadow-sm">1</button>
+                        <button onclick="appendNumber('2')" class="p-3 sm:p-5 text-lg sm:text-xl font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition shadow-sm">2</button>
+                        <button onclick="appendNumber('3')" class="p-3 sm:p-5 text-lg sm:text-xl font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition shadow-sm">3</button>
+                        <button onclick="appendOperator('+')" class="p-3 sm:p-5 text-lg font-bold text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40 hover:bg-blue-200 dark:hover:bg-blue-800/60 rounded-xl transition shadow-sm">+</button>
+
+                        <!-- Row 5 -->
+                        <button onclick="deleteLast()" class="p-3 sm:p-5 text-lg font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition shadow-sm flex items-center justify-center">
+                            <i class="fa-solid fa-delete-left"></i>
+                        </button>
+                        <button onclick="appendNumber('0')" class="p-3 sm:p-5 text-lg sm:text-xl font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition shadow-sm">0</button>
+                        <button onclick="appendDecimal()" class="p-3 sm:p-5 text-lg font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition shadow-sm">.</button>
+                        <button onclick="calculate()" class="p-3 sm:p-5 text-xl font-bold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 rounded-xl transition shadow-md shadow-blue-500/30 flex items-center justify-center">
+                            =
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Toast / Message Box (Replaces alert) -->
+                <div id="toast" class="hidden mt-3 p-2.5 bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs rounded-xl text-center transition-all">
+                    <i class="fa-solid fa-circle-exclamation mr-1"></i> <span id="toast-message">Invalid Expression</span>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- History Popup / Overlay Modal -->
+    <div id="history-modal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-5 shadow-2xl flex flex-col max-h-[85vh]">
+            <!-- History Header -->
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-4 flex-shrink-0">
+                <h3 class="font-bold text-base tracking-wider text-slate-200 uppercase flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-blue-500 text-lg"></i> HISTORY
+                </h3>
+                <div class="flex items-center gap-3">
+                    <button onclick="clearHistory()" class="text-xs text-slate-400 hover:text-red-400 transition flex items-center gap-1">
+                        <i class="fa-solid fa-trash-can"></i> Clear
+                    </button>
+                    <button onclick="closeHistoryModal()" class="w-7 h-7 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- History Content List -->
+            <div id="history-list" class="flex-1 overflow-y-auto space-y-3 pr-1 min-h-[200px]">
+                <div id="empty-history" class="text-center text-slate-500 text-xs py-12">
+                    Koi purani calculation nahi hai
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="pt-4 mt-3 border-t border-slate-800 text-[11px] text-slate-500 text-center flex-shrink-0 font-sans">
+                Keyboard bindings enabled (0-9, +, -, *, /, (, ), Enter, Backspace)
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State variables
+        let currentInput = '0';
+        let expression = '';
+        let shouldResetInput = false;
+        let isScientificOpen = false;
+        let history = [];
+        let openBracketsCount = 0;
+
+        // DOM Elements
+        const mainDisplay = document.getElementById('main-display');
+        const expressionDisplay = document.getElementById('expression-display');
+        const scientificPanel = document.getElementById('scientific-panel');
+        const historyList = document.getElementById('history-list');
+        const emptyHistory = document.getElementById('empty-history');
+        const historyModal = document.getElementById('history-modal');
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toast-message');
+
+        // Theme Toggle Functionality
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                icon.className = 'fa-solid fa-sun text-amber-500';
+            } else {
+                html.classList.add('dark');
+                icon.className = 'fa-solid fa-moon';
+            }
+        }
+
+        // Toggle Scientific Mode
+        function toggleScientific() {
+            isScientificOpen = !isScientificOpen;
+            if (isScientificOpen) {
+                scientificPanel.classList.remove('hidden');
+                scientificPanel.classList.add('grid');
+            } else {
+                scientificPanel.classList.add('hidden');
+                scientificPanel.classList.remove('grid');
+            }
+        }
+
+        // History Modal Controllers
+        function openHistoryModal() {
+            historyModal.classList.remove('hidden');
+        }
+
+        function closeHistoryModal() {
+            historyModal.classList.add('hidden');
+        }
+
+        // Close Modal when clicking outside wrapper
+        historyModal.addEventListener('click', (e) => {
+            if (e.target === historyModal) {
+                closeHistoryModal();
+            }
+        });
+
+        // Display Update Helper
+        function updateDisplay() {
+            mainDisplay.innerText = currentInput;
+            expressionDisplay.innerText = expression || '0';
+        }
+
+        // Show Toast Notification (replaces alert)
+        function showToast(msg) {
+            toastMessage.innerText = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Smart Parentheses Functionality `( )`
+        function appendParentheses() {
+            if (expression.endsWith('=')) {
+                expression = '(';
+                currentInput = '0';
+                openBracketsCount = 1;
+                shouldResetInput = false;
+            } else {
+                const exprTrimmed = expression.trim();
+                const lastChar = exprTrimmed.slice(-1);
+                
+                // Decide whether to append '(' or ')'
+                if (openBracketsCount > 0 && (/\d|\)/.test(currentInput) && !shouldResetInput)) {
+                    expression += currentInput + ' ) ';
+                    openBracketsCount--;
+                    shouldResetInput = true;
+                } else if (openBracketsCount > 0 && lastChar === ')') {
+                    expression += ' ) ';
+                    openBracketsCount--;
+                    shouldResetInput = true;
+                } else {
+                    if (isLastCharOperator(expression) || expression === '') {
+                        expression += '( ';
+                    } else {
+                        expression += currentInput + ' * ( ';
+                    }
+                    openBracketsCount++;
+                    shouldResetInput = true;
+                }
+            }
+            updateDisplay();
+        }
+
+        // Append Number
+        function appendNumber(num) {
+            if (currentInput === '0' || shouldResetInput) {
+                currentInput = num;
+                shouldResetInput = false;
+            } else {
+                if (currentInput.length < 16) {
+                    currentInput += num;
+                }
+            }
+            updateDisplay();
+        }
+
+        // Append Decimal
+        function appendDecimal() {
+            if (shouldResetInput) {
+                currentInput = '0.';
+                shouldResetInput = false;
+            } else if (!currentInput.includes('.')) {
+                currentInput += '.';
+            }
+            updateDisplay();
+        }
+
+        // Helper to check if string ends with an operator
+        function isLastCharOperator(str) {
+            return /[+\-×÷^%]\s*$/.test(str.trim());
+        }
+
+        // Append Operator
+        function appendOperator(op) {
+            const symbolMap = { '/': '÷', '*': '×', '+': '+', '-': '-', '^': '^', '%': '%' };
+            const opSymbol = symbolMap[op] || op;
+
+            if (expression.endsWith('=')) {
+                expression = currentInput + ' ' + opSymbol + ' ';
+            } else if (shouldResetInput && isLastCharOperator(expression)) {
+                expression = expression.trim().slice(0, -1).trim() + ' ' + opSymbol + ' ';
+            } else {
+                expression += currentInput + ' ' + opSymbol + ' ';
+            }
+            shouldResetInput = true;
+            updateDisplay();
+        }
+
+        // Append Scientific Functions
+        function appendFunction(fn) {
+            let val = parseFloat(currentInput);
+            let res = 0;
+
+            try {
+                switch(fn) {
+                    case 'sin':
+                        res = Math.sin(val * Math.PI / 180);
+                        expression = `sin(${val})`;
+                        break;
+                    case 'cos':
+                        res = Math.cos(val * Math.PI / 180);
+                        expression = `cos(${val})`;
+                        break;
+                    case 'tan':
+                        res = Math.tan(val * Math.PI / 180);
+                        expression = `tan(${val})`;
+                        break;
+                    case 'log':
+                        if (val <= 0) throw new Error('Invalid Input');
+                        res = Math.log10(val);
+                        expression = `log(${val})`;
+                        break;
+                    case 'ln':
+                        if (val <= 0) throw new Error('Invalid Input');
+                        res = Math.log(val);
+                        expression = `ln(${val})`;
+                        break;
+                    case 'sqrt':
+                        if (val < 0) throw new Error('Invalid Input');
+                        res = Math.sqrt(val);
+                        expression = `√(${val})`;
+                        break;
+                    case 'abs':
+                        res = Math.abs(val);
+                        expression = `abs(${val})`;
+                        break;
+                }
+
+                res = Number(res.toFixed(8)).toString();
+                addHistoryItem(expression, res);
+                currentInput = res;
+                expression += ' =';
+                shouldResetInput = true;
+                updateDisplay();
+            } catch (err) {
+                showToast('Math Error');
+            }
+        }
+
+        // Append Constants
+        function appendConstant(constName) {
+            if (constName === 'π') {
+                currentInput = Math.PI.toFixed(8).toString();
+            } else if (constName === 'e') {
+                currentInput = Math.E.toFixed(8).toString();
+            }
+            shouldResetInput = false;
+            updateDisplay();
+        }
+
+        // Toggle Sign (+/-)
+        function toggleSign() {
+            if (currentInput !== '0') {
+                if (currentInput.startsWith('-')) {
+                    currentInput = currentInput.slice(1);
+                } else {
+                    currentInput = '-' + currentInput;
+                }
+                updateDisplay();
+            }
+        }
+
+        // Delete Last Character
+        function deleteLast() {
+            if (shouldResetInput) return;
+            if (currentInput.length === 1 || (currentInput.length === 2 && currentInput.startsWith('-'))) {
+                currentInput = '0';
+            } else {
+                currentInput = currentInput.slice(0, -1);
+            }
+            updateDisplay();
+        }
+
+        // Clear All
+        function clearAll() {
+            currentInput = '0';
+            expression = '';
+            shouldResetInput = false;
+            openBracketsCount = 0;
+            updateDisplay();
+        }
+
+        // Calculate Result Safely
+        function calculate() {
+            if (!expression && currentInput === '0') return;
+
+            let fullExpression = expression.endsWith('=') ? currentInput : expression + (shouldResetInput ? '' : currentInput);
+
+            // Auto close remaining open brackets
+            for (let i = 0; i < openBracketsCount; i++) {
+                fullExpression += ' )';
+            }
+            openBracketsCount = 0;
+
+            let sanitizedExpr = fullExpression
+                .replace(/÷/g, '/')
+                .replace(/×/g, '*')
+                .replace(/\^/g, '**')
+                .replace(/%/g, '/100');
+
+            try {
+                let result = Function('"use strict"; return (' + sanitizedExpr + ')')();
+                
+                if (!isFinite(result) || isNaN(result)) {
+                    throw new Error('Division by zero or invalid operation');
+                }
+
+                result = Number(result.toFixed(8)).toString();
+                
+                addHistoryItem(fullExpression, result);
+                
+                expression = fullExpression + ' =';
+                currentInput = result;
+                shouldResetInput = true;
+                updateDisplay();
+
+            } catch (e) {
+                showToast('Galat samikaran (Invalid Expression)');
+            }
+        }
+
+        // History Management
+        function addHistoryItem(expr, res) {
+            history.unshift({ expr, res });
+            renderHistory();
+        }
+
+        function renderHistory() {
+            if (history.length === 0) {
+                emptyHistory.classList.remove('hidden');
+                historyList.innerHTML = '';
+                historyList.appendChild(emptyHistory);
+                return;
+            }
+
+            emptyHistory.classList.add('hidden');
+            historyList.innerHTML = '';
+
+            history.forEach((item) => {
+                const card = document.createElement('div');
+                card.className = 'bg-slate-950/70 p-4 rounded-xl border border-slate-800/80 cursor-pointer hover:border-blue-500/60 transition shadow-sm';
+                card.onclick = () => {
+                    currentInput = item.res;
+                    expression = '';
+                    shouldResetInput = true;
+                    updateDisplay();
+                    closeHistoryModal();
+                };
+
+                card.innerHTML = `
+                    <div class="text-xs sm:text-sm text-slate-400 font-mono text-right truncate">${item.expr}</div>
+                    <div class="text-base sm:text-lg font-bold text-blue-400 font-mono text-right mt-1">= ${item.res}</div>
+                `;
+                historyList.appendChild(card);
+            });
+        }
+
+        function clearHistory() {
+            history = [];
+            renderHistory();
+        }
+
+        // Keyboard Support
+        document.addEventListener('keydown', (event) => {
+            const key = event.key;
+
+            if (key === 'Escape') {
+                if (!historyModal.classList.contains('hidden')) {
+                    closeHistoryModal();
+                    return;
+                }
+                clearAll();
+            }
+            if (key >= '0' && key <= '9') appendNumber(key);
+            if (key === '.') appendDecimal();
+            if (key === '+') appendOperator('+');
+            if (key === '-') appendOperator('-');
+            if (key === '*') appendOperator('*');
+            if (key === '/') { event.preventDefault(); appendOperator('/'); }
+            if (key === '%') appendOperator('%');
+            if (key === '(' || key === ')') appendParentheses();
+            if (key === 'Enter' || key === '=') { event.preventDefault(); calculate(); }
+            if (key === 'Backspace') deleteLast();
+        });
+
+        // Initial Display Update
+        updateDisplay();
+    </script>
+</body>
+</html>
